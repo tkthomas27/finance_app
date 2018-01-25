@@ -1,0 +1,60 @@
+---
+title: "Finance App Data"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+app_data <- read_csv("raw_data.csv") %>% 
+    select(year, conm, tic, gsubind, shrcd, sp500, nsp500, age, 
+           at, seq, che, 
+           revt, xrd, xsga, capx, ebit, ebitda, ni, 
+           mcap, csho, prcc_c, totdiv_adj, div, dvt) %>% 
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>% 
+    filter(at > 0 & mcap > 0) %>% 
+    mutate_if(is.numeric, funs(round(.,5))) %>% 
+    mutate(gics = as.numeric(substr(gsubind,1,2))) %>% 
+    group_by(tic) %>% mutate(avg_at = (at+lag(at))/2,
+                             avg_seq = (seq+lag(seq))/2) %>% 
+    filter(!is.na(avg_at)) %>% 
+    filter(!is.na(avg_seq)) %>% 
+    mutate(eps = round(ni/mcap,3),
+           pb = round(mcap/seq,3),
+           div_y = round((totdiv_adj/csho)/prcc_c,3),
+           div_p = round(totdiv_adj/ni,3),
+           roa = round(ni/avg_at,3),
+           roe = round(ni/avg_seq,3),
+           pmargin = round(ni/revt,3),
+           turn = round(revt/avg_at,3),
+           lev = round(avg_at/avg_seq,3))
+
+
+```
+
+```{r}
+x<- app_data %>% 
+    mutate_if(is.numeric, funs(replace(., is.na(.), 0))) %>% 
+    mutate_if(is.numeric, funs(round(.,5))) %>% 
+    filter(at > 0 & mcap > 0 & revt > 0 & seq > 0) %>% 
+    mutate(gics = as.numeric(substr(gsubind,1,2))) %>% 
+    group_by(tic) %>% mutate(avg_at = (at+lag(at))/2,
+                             avg_seq = (seq+lag(seq))/2) %>% 
+    filter(!is.na(avg_at)) %>% 
+    filter(!is.na(avg_seq)) %>% 
+    filter(avg_at > 0 & avg_seq >0) %>% 
+    mutate(eps = round(ni/mcap,3),
+           pb = round(mcap/seq,3),
+           #div_y = round((totdiv_adj/csho)/prcc_c,3),
+           #div_p = round(totdiv_adj/ni,3),
+           roa = round(ni/avg_at,3),
+           roe = round(ni/avg_seq,3),
+           pmargin = round(ni/revt,3),
+           turn = round(revt/avg_at,3),
+           lev = round(avg_at/avg_seq,3))
+write_csv(x, "app_data.csv")
+```
+
